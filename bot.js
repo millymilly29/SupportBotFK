@@ -70,6 +70,22 @@ bot.on('message', async (msg) => {
             return sendWelcome(chatId);
         }
 
+        // Админ-панель
+        if (text === '/admin' && chatId.toString() === adminId?.toString()) {
+            const stats = await db.get('SELECT COUNT(*) as total, SUM(completed) as completed FROM users');
+            const adminText = `🛠 *Админ-панель*\n\n` +
+                `Всего пользователей: ${stats.total}\n` +
+                `Завершили опрос: ${stats.completed}\n\n` +
+                `Выберите действие:`;
+
+            return bot.sendMessage(chatId, adminText, {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    inline_keyboard: [[{ text: '📋 Посмотреть последние лиды', callback_data: 'admin_leads' }]]
+                }
+            });
+        }
+
         const user = await db.get('SELECT * FROM users WHERE chat_id = ?', [chatId]);
         if (!user) return;
 
@@ -107,9 +123,25 @@ bot.on('callback_query', async (query) => {
 
         const user = await db.get('SELECT * FROM users WHERE chat_id = ?', [chatId]);
 
-        if (!user) {
+        if (!user && !data.startsWith('admin_')) {
             bot.answerCallbackQuery(query.id, { text: 'Начните с команды /start' });
             return;
+        }
+
+        // Обработка админских колбэков
+        if (data === 'admin_leads' && chatId.toString() === adminId?.toString()) {
+            const leads = await db.all('SELECT user_name, main_goal, contact_data, created_at FROM users WHERE completed = 1 ORDER BY created_at DESC LIMIT 10');
+
+            if (leads.length === 0) {
+                return bot.sendMessage(chatId, 'Лидов пока нет.');
+            }
+
+            let response = `📋 *Последние 10 лидов:*\n\n`;
+            leads.forEach((l, i) => {
+                response += `${i + 1}. *${l.user_name}* (${l.main_goal})\n   Контакт: ${l.contact_data}\n   Дата: ${l.created_at}\n\n`;
+            });
+
+            return bot.sendMessage(chatId, response, { parse_mode: 'Markdown' });
         }
 
         if (data === 'start_quiz') {
