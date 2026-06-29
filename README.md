@@ -1,3 +1,11 @@
+# Telegram Support Bot for Fares Korea
+
+**EN:** Customer support and recommendation Telegram bot built for the Fares Korea brand. Collects user info, gives personalized product recommendations, and includes an admin panel with a lead list and notifications.
+
+**Stack:** Node.js, deployed on Railway.
+
+---
+
 # Telegram Bot для Fares Korea
 
 Telegram бот для сбора информации от пользователей и предоставления персональных рекомендаций.
